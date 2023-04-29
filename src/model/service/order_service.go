@@ -23,7 +23,7 @@ import (
 const (
 	CnyMinimumPaymentAmount  = 0.01 // cny最低支付金额
 	UsdtMinimumPaymentAmount = 0.01 // usdt最低支付金额
-	UsdtAmountPerIncrement   = 0.01 // usdt每次递增金额
+	UsdtAmountPerIncrement   = 0.0001 // usdt每次递增金额
 	IncrementalMaximumNumber = 100  // 最大递增次数
 )
 
@@ -33,7 +33,7 @@ var gCreateTransactionLock sync.Mutex
 func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateTransactionResponse, error) {
 	gCreateTransactionLock.Lock()
 	defer gCreateTransactionLock.Unlock()
-	payAmount := math.MustParsePrecFloat64(req.Amount, 2)
+	payAmount := math.MustParsePrecFloat64(req.Amount, 4)
 	// 按照汇率转化USDT
 	decimalPayAmount := decimal.NewFromFloat(payAmount)
 	decimalRate := decimal.NewFromFloat(config.GetUsdtRate())
@@ -62,7 +62,7 @@ func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateT
 	if len(walletAddress) <= 0 {
 		return nil, constant.NotAvailableWalletAddress
 	}
-	amount := math.MustParsePrecFloat64(decimalUsdt.InexactFloat64(), 2)
+	amount := math.MustParsePrecFloat64(decimalUsdt.InexactFloat64(), 4)
 	availableToken, availableAmount, err := CalculateAvailableWalletAndAmount(amount, walletAddress)
 	if err != nil {
 		return nil, err
@@ -139,12 +139,12 @@ func OrderProcessing(req *request.OrderProcessingRequest) error {
 // CalculateAvailableWalletAndAmount 计算可用钱包地址和金额
 func CalculateAvailableWalletAndAmount(amount float64, walletAddress []mdb.WalletAddress) (string, float64, error) {
 	availableToken := ""
-	availableAmount := amount
+	availableAmount := amount + float64((rand.Intn(95) + 5)) / 10000.0
 	calculateAvailableWalletFunc := func(amount float64) (string, error) {
 		availableWallet := ""
 		for _, address := range walletAddress {
 			token := address.Token
-			result, err := data.GetTradeIdByWalletAddressAndAmount(token, amount)
+			result, err := data.GetTradeIdByWalletAddressAndAmount(token, availableAmount)
 			if err != nil {
 				return "", err
 			}
