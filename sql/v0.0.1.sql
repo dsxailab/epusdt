@@ -4,7 +4,7 @@ create table orders
     id                   int auto_increment
         primary key,
     trade_id             varchar(32)    not null comment 'epusdt订单号',
-    order_id             varchar(32)    not null comment '客户交易id',
+    order_id             varchar(128)    not null comment '客户交易id',
     block_transaction_id varchar(128)   null comment '区块唯一编号',
     actual_amount        decimal(19, 4) not null comment '订单实际需要支付的金额，保留4位小数',
     amount               decimal(19, 4) not null comment '订单金额，保留4位小数',
