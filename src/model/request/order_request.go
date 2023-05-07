@@ -4,7 +4,7 @@ import "github.com/gookit/validate"
 
 // CreateTransactionRequest 创建交易请求
 type CreateTransactionRequest struct {
-	OrderId     string  `json:"order_id" validate:"required|maxLen:32"`
+	OrderId     string  `json:"order_id" validate:"required|maxLen:128"`
 	Amount      float64 `json:"amount" validate:"required|isFloat|gt:0.01"`
 	NotifyUrl   string  `json:"notify_url" validate:"required"`
 	Signature   string  `json:"signature"  validate:"required"`
