@@ -1,8 +1,8 @@
 package http_client
 
 import (
+	"github.com/assimon/luuu/config"
 	"github.com/go-resty/resty/v2"
-	"time"
 )
 
 // GetHttpClient 获取请求客户端
@@ -13,6 +13,6 @@ func GetHttpClient(proxys ...string) *resty.Client {
 		proxy := proxys[0]
 		client.SetProxy(proxy)
 	}
-	client.SetTimeout(time.Second * 5)
+	client.SetTimeout(config.GetTrcQryTimeout())
 	return client
 }

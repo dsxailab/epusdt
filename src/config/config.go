@@ -2,21 +2,23 @@ package config
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"os"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 var (
-	AppDebug    bool
-	MysqlDns    string
-	RuntimePath string
-	LogSavePath string
-	StaticPath  string
-	TgBotToken  string
-	TgProxy     string
-	TgManage    int64
-	UsdtRate    float64
+	AppDebug             bool
+	MysqlDns             string
+	RuntimePath          string
+	LogSavePath          string
+	StaticPath           string
+	TgBotToken           string
+	TgProxy              string
+	TgManage             int64
+	UsdtRate             float64
+	TrcQryTimeoutSeconds int
 )
 
 func Init() {
@@ -51,6 +53,11 @@ func Init() {
 	TgBotToken = viper.GetString("tg_bot_token")
 	TgProxy = viper.GetString("tg_proxy")
 	TgManage = viper.GetInt64("tg_manage")
+	TrcQryTimeoutSeconds = viper.GetInt("trc_qry_timeout_seconds")
+
+	if TrcQryTimeoutSeconds <= 2 {
+		TrcQryTimeoutSeconds = 30
+	}
 }
 
 func GetAppVersion() string {
@@ -95,4 +102,8 @@ func GetOrderExpirationTime() int {
 func GetOrderExpirationTimeDuration() time.Duration {
 	timer := GetOrderExpirationTime()
 	return time.Minute * time.Duration(timer)
+}
+
+func GetTrcQryTimeout() time.Duration {
+	return time.Second * time.Duration(TrcQryTimeoutSeconds)
 }

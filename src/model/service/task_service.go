@@ -2,6 +2,9 @@ package service
 
 import (
 	"fmt"
+	"net/http"
+	"sync"
+
 	"github.com/assimon/luuu/model/data"
 	"github.com/assimon/luuu/model/request"
 	"github.com/assimon/luuu/mq"
@@ -14,8 +17,6 @@ import (
 	"github.com/gookit/goutil/stdutil"
 	"github.com/hibiken/asynq"
 	"github.com/shopspring/decimal"
-	"net/http"
-	"sync"
 )
 
 const UsdtTrc20ApiUri = "https://apilist.tronscanapi.com/api/transfer/trc20"
@@ -106,6 +107,8 @@ func Trc20CallBack(token string, wg *sync.WaitGroup) {
 		}
 		decimalDivisor := decimal.NewFromFloat(1000000)
 		amount := decimalQuant.Div(decimalDivisor).InexactFloat64()
+		theMsg := fmt.Sprintf("decimalQuant %s amount: %f", decimalQuant.StringFixed(4), amount)
+		log.Sugar.Info(theMsg)
 		tradeId, err := data.GetTradeIdByWalletAddressAndAmount(token, amount)
 		if err != nil {
 			panic(err)
@@ -122,6 +125,7 @@ func Trc20CallBack(token string, wg *sync.WaitGroup) {
 		if transfer.BlockTimestamp < createTime {
 			panic("Orders cannot actually be matched")
 		}
+		log.Sugar.Info("Transaction detected")
 		// 到这一步就完全算是支付成功了
 		req := &request.OrderProcessingRequest{
 			Token:              token,
