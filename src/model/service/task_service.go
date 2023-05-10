@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/assimon/luuu/config"
 	"github.com/assimon/luuu/model/data"
 	"github.com/assimon/luuu/model/request"
 	"github.com/assimon/luuu/mq"
@@ -107,22 +108,26 @@ func Trc20CallBack(token string, wg *sync.WaitGroup) {
 		}
 		decimalDivisor := decimal.NewFromFloat(1000000)
 		amount := decimalQuant.Div(decimalDivisor).InexactFloat64()
-		theMsg := fmt.Sprintf("decimalQuant %s amount: %f", decimalQuant.StringFixed(4), amount)
-		log.Sugar.Info(theMsg)
 		tradeId, err := data.GetTradeIdByWalletAddressAndAmount(token, amount)
 		if err != nil {
 			panic(err)
 		}
 		if tradeId == "" {
+			theMsg := fmt.Sprintf("trade id not found for amount: %f", amount)
+			log.Sugar.Info(theMsg)
 			continue
 		}
 		order, err := data.GetOrderInfoByTradeId(tradeId)
 		if err != nil {
+			theMsg := fmt.Sprintf("order not found for amount: %f", amount)
+			log.Sugar.Info(theMsg)
 			panic(err)
 		}
 		// 区块的确认时间必须在订单创建时间之后
 		createTime := order.CreatedAt.TimestampWithMillisecond()
-		if transfer.BlockTimestamp < createTime {
+		if transfer.BlockTimestamp < createTime-config.TimeskewMillSeconds {
+			theMsg := fmt.Sprintf("order time is after the payment time for amount: %f", amount)
+			log.Sugar.Info(theMsg)
 			panic("Orders cannot actually be matched")
 		}
 		log.Sugar.Info("Transaction detected")

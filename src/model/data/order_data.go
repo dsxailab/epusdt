@@ -3,12 +3,14 @@ package data
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/assimon/luuu/model/dao"
 	"github.com/assimon/luuu/model/mdb"
 	"github.com/assimon/luuu/model/request"
+	"github.com/assimon/luuu/util/log"
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
-	"time"
 )
 
 var (
@@ -84,9 +86,11 @@ func GetTradeIdByWalletAddressAndAmount(token string, amount float64) (string, e
 	cacheKey := fmt.Sprintf(CacheWalletAddressWithAmountToTradeIdKey, token, amount)
 	result, err := dao.Rdb.Get(ctx, cacheKey).Result()
 	if err == redis.Nil {
+		log.Sugar.Info(fmt.Sprintf("unable to find trade from redis: %s", cacheKey))
 		return "", nil
 	}
 	if err != nil {
+		log.Sugar.Info(fmt.Sprintf("unable to find trade from redis: %s, errored", cacheKey))
 		return "", err
 	}
 	return result, nil
@@ -96,6 +100,7 @@ func GetTradeIdByWalletAddressAndAmount(token string, amount float64) (string, e
 func LockTransaction(token, tradeId string, amount float64, expirationTime time.Duration) error {
 	ctx := context.Background()
 	cacheKey := fmt.Sprintf(CacheWalletAddressWithAmountToTradeIdKey, token, amount)
+	log.Sugar.Info(fmt.Sprintf("cache key when lock trans: %s", cacheKey))
 	err := dao.Rdb.Set(ctx, cacheKey, tradeId, expirationTime).Err()
 	return err
 }

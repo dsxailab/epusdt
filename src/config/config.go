@@ -19,6 +19,7 @@ var (
 	TgManage             int64
 	UsdtRate             float64
 	TrcQryTimeoutSeconds int
+	TimeskewMillSeconds  int64
 )
 
 func Init() {
@@ -54,9 +55,13 @@ func Init() {
 	TgProxy = viper.GetString("tg_proxy")
 	TgManage = viper.GetInt64("tg_manage")
 	TrcQryTimeoutSeconds = viper.GetInt("trc_qry_timeout_seconds")
+	TimeskewMillSeconds = viper.GetInt64("time_skew_mseconds")
 
 	if TrcQryTimeoutSeconds <= 2 {
 		TrcQryTimeoutSeconds = 30
+	}
+	if TimeskewMillSeconds <= 0 {
+		TimeskewMillSeconds = 30000
 	}
 }
 
