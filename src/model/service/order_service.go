@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	CnyMinimumPaymentAmount  = 0.01 // cny最低支付金额
-	UsdtMinimumPaymentAmount = 0.01 // usdt最低支付金额
+	CnyMinimumPaymentAmount  = 0.01   // cny最低支付金额
+	UsdtMinimumPaymentAmount = 0.01   // usdt最低支付金额
 	UsdtAmountPerIncrement   = 0.0001 // usdt每次递增金额
-	IncrementalMaximumNumber = 100  // 最大递增次数
+	IncrementalMaximumNumber = 100    // 最大递增次数
 )
 
 var gCreateTransactionLock sync.Mutex
@@ -139,20 +139,20 @@ func OrderProcessing(req *request.OrderProcessingRequest) error {
 // CalculateAvailableWalletAndAmount 计算可用钱包地址和金额
 func CalculateAvailableWalletAndAmount(amount float64, walletAddress []mdb.WalletAddress) (string, float64, error) {
 	availableToken := ""
-	availableAmount := amount + float64((rand.Intn(95) + 5)) / 10000.0
+	availableAmount := amount + float64((rand.Intn(95)+5))/10000.0
 	calculateAvailableWalletFunc := func(amount float64) (string, error) {
-		availableWallet := ""
-		for _, address := range walletAddress {
-			token := address.Token
-			result, err := data.GetTradeIdByWalletAddressAndAmount(token, availableAmount)
-			if err != nil {
-				return "", err
-			}
-			if result == "" {
-				availableWallet = token
-				break
-			}
+		var index = rand.Intn(len(walletAddress))
+		var address = walletAddress[index]
+		token := address.Token
+		result, err := data.GetTradeIdByWalletAddressAndAmount(token, availableAmount)
+		if err != nil {
+			return "", err
 		}
+		availableWallet := ""
+		if result == "" {
+			availableWallet = token
+		}
+
 		return availableWallet, nil
 	}
 	for i := 0; i < IncrementalMaximumNumber; i++ {
