@@ -107,26 +107,26 @@ func Trc20CallBack(token string, wg *sync.WaitGroup) {
 			panic(err)
 		}
 		decimalDivisor := decimal.NewFromFloat(1000000)
-		amount := decimalQuant.Div(decimalDivisor).InexactFloat64()
+		amount := decimalQuant.Div(decimalDivisor)
 		tradeId, err := data.GetTradeIdByWalletAddressAndAmount(token, amount)
 		if err != nil {
 			panic(err)
 		}
 		if tradeId == "" {
-			theMsg := fmt.Sprintf("trade id not found for amount: %f", amount)
+			theMsg := fmt.Sprintf("trade id not found for amount: %v", amount)
 			log.Sugar.Info(theMsg)
 			continue
 		}
 		order, err := data.GetOrderInfoByTradeId(tradeId)
 		if err != nil {
-			theMsg := fmt.Sprintf("order not found for amount: %f", amount)
+			theMsg := fmt.Sprintf("order not found for amount: %v", amount)
 			log.Sugar.Info(theMsg)
 			panic(err)
 		}
 		// 区块的确认时间必须在订单创建时间之后
 		createTime := order.CreatedAt.TimestampWithMillisecond()
 		if transfer.BlockTimestamp < createTime-config.TimeskewMillSeconds {
-			theMsg := fmt.Sprintf("order time is after the payment time for amount: %f", amount)
+			theMsg := fmt.Sprintf("order time is after the payment time for amount: %v", amount)
 			log.Sugar.Info(theMsg)
 			panic("Orders cannot actually be matched")
 		}
@@ -150,8 +150,8 @@ func Trc20CallBack(token string, wg *sync.WaitGroup) {
 <b>📢📢有新的交易支付成功！</b>
 <pre>交易号：%s</pre>
 <pre>订单号：%s</pre>
-<pre>请求支付金额：%f cny</pre>
-<pre>实际支付金额：%f usdt</pre>
+<pre>请求支付金额：%v cny</pre>
+<pre>实际支付金额：%v usdt</pre>
 <pre>钱包地址：%s</pre>
 <pre>订单创建时间：%s</pre>
 <pre>支付成功时间：%s</pre>

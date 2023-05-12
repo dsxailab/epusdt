@@ -1,12 +1,21 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/assimon/luuu/bootstrap"
 	"github.com/assimon/luuu/config"
 	"github.com/gookit/color"
+	"github.com/gookit/validate"
+	"github.com/shopspring/decimal"
 )
 
 func main() {
+	validate.AddValidator("isDecimal", func(val interface{}) bool {
+		var _, err = decimal.NewFromString(fmt.Sprintf("%v", val))
+		return err == nil
+	})
+
 	defer func() {
 		if err := recover(); err != nil {
 			color.Error.Println("[Start Server Err!!!] ", err)

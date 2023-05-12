@@ -2,6 +2,10 @@ package service
 
 import (
 	"fmt"
+	"math/rand"
+	"sync"
+	"time"
+
 	"github.com/assimon/luuu/config"
 	"github.com/assimon/luuu/model/dao"
 	"github.com/assimon/luuu/model/data"
@@ -11,13 +15,9 @@ import (
 	"github.com/assimon/luuu/mq"
 	"github.com/assimon/luuu/mq/handle"
 	"github.com/assimon/luuu/util/constant"
-	"github.com/assimon/luuu/util/math"
 	"github.com/golang-module/carbon/v2"
 	"github.com/hibiken/asynq"
 	"github.com/shopspring/decimal"
-	"math/rand"
-	"sync"
-	"time"
 )
 
 const (
@@ -33,9 +33,8 @@ var gCreateTransactionLock sync.Mutex
 func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateTransactionResponse, error) {
 	gCreateTransactionLock.Lock()
 	defer gCreateTransactionLock.Unlock()
-	payAmount := math.MustParsePrecFloat64(req.Amount, 4)
 	// 按照汇率转化USDT
-	decimalPayAmount := decimal.NewFromFloat(payAmount)
+	decimalPayAmount := req.Amount.Round(4)
 	decimalRate := decimal.NewFromFloat(config.GetUsdtRate())
 	decimalUsdt := decimalPayAmount.Div(decimalRate)
 	// cny 是否可以满足最低支付金额
@@ -62,8 +61,7 @@ func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateT
 	if len(walletAddress) <= 0 {
 		return nil, constant.NotAvailableWalletAddress
 	}
-	amount := math.MustParsePrecFloat64(decimalUsdt.InexactFloat64(), 4)
-	availableToken, availableAmount, err := CalculateAvailableWalletAndAmount(amount, walletAddress)
+	availableToken, availableAmount, err := CalculateAvailableWalletAndAmount(decimalUsdt.Round(4), walletAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -137,10 +135,12 @@ func OrderProcessing(req *request.OrderProcessingRequest) error {
 }
 
 // CalculateAvailableWalletAndAmount 计算可用钱包地址和金额
-func CalculateAvailableWalletAndAmount(amount float64, walletAddress []mdb.WalletAddress) (string, float64, error) {
+func CalculateAvailableWalletAndAmount(amount decimal.Decimal,
+	walletAddress []mdb.WalletAddress) (string, decimal.Decimal, error) {
 	availableToken := ""
-	availableAmount := amount + float64((rand.Intn(95)+5))/10000.0
-	calculateAvailableWalletFunc := func(amount float64) (string, error) {
+	var fraction = decimal.NewFromInt32(int32(rand.Intn(95) + 5))
+	availableAmount := amount.Add(fraction.Div(decimal.NewFromInt32(10000.0)))
+	calculateAvailableWalletFunc := func(amount decimal.Decimal) (string, error) {
 		var index = rand.Intn(len(walletAddress))
 		var address = walletAddress[index]
 		token := address.Token
@@ -158,13 +158,13 @@ func CalculateAvailableWalletAndAmount(amount float64, walletAddress []mdb.Walle
 	for i := 0; i < IncrementalMaximumNumber; i++ {
 		token, err := calculateAvailableWalletFunc(availableAmount)
 		if err != nil {
-			return "", 0, err
+			return "", decimal.Zero, err
 		}
 		// 拿不到可用钱包就累加金额
 		if token == "" {
-			decimalOldAmount := decimal.NewFromFloat(availableAmount)
+			decimalOldAmount := availableAmount
 			decimalIncr := decimal.NewFromFloat(UsdtAmountPerIncrement)
-			availableAmount = decimalOldAmount.Add(decimalIncr).InexactFloat64()
+			availableAmount = decimalOldAmount.Add(decimalIncr)
 			continue
 		}
 		availableToken = token

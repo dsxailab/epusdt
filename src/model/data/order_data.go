@@ -10,6 +10,7 @@ import (
 	"github.com/assimon/luuu/model/request"
 	"github.com/assimon/luuu/util/log"
 	"github.com/go-redis/redis/v8"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -81,7 +82,7 @@ func UpdateOrderIsExpirationById(id uint64) error {
 }
 
 // GetTradeIdByWalletAddressAndAmount 通过钱包地址，支付金额获取交易号
-func GetTradeIdByWalletAddressAndAmount(token string, amount float64) (string, error) {
+func GetTradeIdByWalletAddressAndAmount(token string, amount decimal.Decimal) (string, error) {
 	ctx := context.Background()
 	cacheKey := fmt.Sprintf(CacheWalletAddressWithAmountToTradeIdKey, token, amount)
 	result, err := dao.Rdb.Get(ctx, cacheKey).Result()
@@ -97,7 +98,7 @@ func GetTradeIdByWalletAddressAndAmount(token string, amount float64) (string, e
 }
 
 // LockTransaction 锁定交易
-func LockTransaction(token, tradeId string, amount float64, expirationTime time.Duration) error {
+func LockTransaction(token, tradeId string, amount decimal.Decimal, expirationTime time.Duration) error {
 	ctx := context.Background()
 	cacheKey := fmt.Sprintf(CacheWalletAddressWithAmountToTradeIdKey, token, amount)
 	log.Sugar.Info(fmt.Sprintf("cache key when lock trans: %s", cacheKey))
@@ -106,7 +107,7 @@ func LockTransaction(token, tradeId string, amount float64, expirationTime time.
 }
 
 // UnLockTransaction 解锁交易
-func UnLockTransaction(token string, amount float64) error {
+func UnLockTransaction(token string, amount decimal.Decimal) error {
 	ctx := context.Background()
 	cacheKey := fmt.Sprintf(CacheWalletAddressWithAmountToTradeIdKey, token, amount)
 	err := dao.Rdb.Del(ctx, cacheKey).Err()
