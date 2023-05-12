@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/assimon/luuu/config"
 	"github.com/assimon/luuu/model/data"
@@ -100,6 +101,10 @@ func Trc20CallBack(token string, wg *sync.WaitGroup) {
 	}
 	for _, transfer := range trc20Resp.Data {
 		if transfer.To != token || transfer.ContractRet != "SUCCESS" {
+			continue
+		}
+		var minTime = config.GetOrderExpirationTimeDuration().Milliseconds() + int64(config.TrcQryTimeoutSeconds*1000)
+		if transfer.BlockTimestamp < time.Now().UnixMilli()-minTime {
 			continue
 		}
 		decimalQuant, err := decimal.NewFromString(transfer.Amount)
