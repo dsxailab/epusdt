@@ -4,6 +4,7 @@ import "github.com/robfig/cron/v3"
 
 func Start() {
 	c := cron.New()
+	UsdtRateJob{}.Run()
 	// 汇率监听
 	c.AddJob("@every 60s", UsdtRateJob{})
 	// trc20钱包监听
