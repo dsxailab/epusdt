@@ -36,6 +36,10 @@ func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateT
 	// 按照汇率转化USDT
 	decimalPayAmount := req.Amount.Round(4)
 	decimalRate := decimal.NewFromFloat(config.GetUsdtRate())
+
+	if req.ForceUsdtRate.Valid {
+		decimalRate = req.ForceUsdtRate.Decimal
+	}
 	decimalUsdt := decimalPayAmount.Div(decimalRate)
 	// cny 是否可以满足最低支付金额
 	if decimalPayAmount.Cmp(decimal.NewFromFloat(CnyMinimumPaymentAmount)) == -1 {
