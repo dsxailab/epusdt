@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	. "github.com/ahmetb/go-linq/v3"
 	"github.com/assimon/luuu/config"
 	"github.com/assimon/luuu/model/dao"
 	"github.com/assimon/luuu/model/data"
@@ -65,7 +66,7 @@ func CreateTransaction(req *request.CreateTransactionRequest) (*response.CreateT
 	if len(walletAddress) <= 0 {
 		return nil, constant.NotAvailableWalletAddress
 	}
-	availableToken, availableAmount, err := CalculateAvailableWalletAndAmount(decimalUsdt.Round(4), walletAddress)
+	availableToken, availableAmount, err := CalculateAvailableWalletAndAmount(decimalUsdt.Round(4), walletAddress, req.PreferredAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -140,13 +141,19 @@ func OrderProcessing(req *request.OrderProcessingRequest) error {
 
 // CalculateAvailableWalletAndAmount 计算可用钱包地址和金额
 func CalculateAvailableWalletAndAmount(amount decimal.Decimal,
-	walletAddress []mdb.WalletAddress) (string, decimal.Decimal, error) {
+	walletAddress []mdb.WalletAddress, preferredAddress string) (string, decimal.Decimal, error) {
 	availableToken := ""
 	var fraction = decimal.NewFromInt32(int32(rand.Intn(95) + 5))
 	availableAmount := amount.Add(fraction.Div(decimal.NewFromInt32(10000.0)))
-	calculateAvailableWalletFunc := func(amount decimal.Decimal) (string, error) {
-		var index = rand.Intn(len(walletAddress))
-		var address = walletAddress[index]
+	var index = rand.Intn(len(walletAddress))
+	if preferredAddress != "" {
+		index = From(walletAddress).IndexOf(func(i interface{}) bool {
+			return i.(mdb.WalletAddress).Token == preferredAddress
+		})
+	}
+
+	calculateAvailableWalletFunc := func(amount decimal.Decimal, walletIndex int) (string, error) {
+		var address = walletAddress[walletIndex]
 		token := address.Token
 		result, err := data.GetTradeIdByWalletAddressAndAmount(token, availableAmount)
 		if err != nil {
@@ -160,7 +167,7 @@ func CalculateAvailableWalletAndAmount(amount decimal.Decimal,
 		return availableWallet, nil
 	}
 	for i := 0; i < IncrementalMaximumNumber; i++ {
-		token, err := calculateAvailableWalletFunc(availableAmount)
+		token, err := calculateAvailableWalletFunc(availableAmount, index)
 		if err != nil {
 			return "", decimal.Zero, err
 		}

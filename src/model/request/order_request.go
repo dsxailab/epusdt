@@ -7,12 +7,13 @@ import (
 
 // CreateTransactionRequest 创建交易请求
 type CreateTransactionRequest struct {
-	OrderId       string              `json:"order_id" validate:"required|maxLen:128"`
-	Amount        decimal.Decimal     `json:"amount" validate:"required|isDecimal"`
-	NotifyUrl     string              `json:"notify_url" validate:"required"`
-	Signature     string              `json:"signature"  validate:"required"`
-	RedirectUrl   string              `json:"redirect_url"`
-	ForceUsdtRate decimal.NullDecimal `json:"force_usdt_rate"`
+	OrderId          string              `json:"order_id" validate:"required|maxLen:128"`
+	Amount           decimal.Decimal     `json:"amount" validate:"required|isDecimal"`
+	NotifyUrl        string              `json:"notify_url" validate:"required"`
+	Signature        string              `json:"signature"  validate:"required"`
+	RedirectUrl      string              `json:"redirect_url"`
+	ForceUsdtRate    decimal.NullDecimal `json:"force_usdt_rate"`
+	PreferredAddress string              `json:"preferred_address"`
 }
 
 func (r CreateTransactionRequest) Translates() map[string]string {
